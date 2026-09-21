@@ -30,7 +30,7 @@ echo "export PATH=\$PATH:$BLENDER_BIN" >> "$HOME/.bashrc"
 source "$HOME/.bashrc"
 
 echo "Starting blender to test..."
-"$BLENDER_BIN/blenderr"
+"$BLENDER_BIN/blender"
 
 
 
