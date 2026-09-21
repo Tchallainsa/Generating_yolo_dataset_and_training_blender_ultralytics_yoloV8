@@ -1,3 +1,5 @@
+
+
 ## Import all relevant libraries
 import sys
 import math
@@ -175,63 +177,87 @@ class BlenderGenerator:
     def generate_key_frames(self):
         self.keyframes = []
 
-        frameCounter:int=0
-        increment:int=int((self.render_number)**(1/3))
         start_time = time.time()
-        for height_cm in range(self.heightVariation["min"], self.heightVariation["max"], int((self.heightVariation["max"]-self.heightVariation["min"])/increment)):
-            for radius_cm in range(self.radiusVariation["min"], self.radiusVariation["max"],int((self.radiusVariation["max"]-self.radiusVariation["min"])/increment)):
-                radius_m = radius_cm / 100
-                height_m = height_cm / 100
-                
-                for angleRoh in range(self.angleRohVariation["min"], self.angleRohVariation["max"],int((self.angleRohVariation["max"]-self.angleRohVariation["min"])/increment)):
 
-                    # Calculate the x, y, and z coordinates for the camera
-                    x = radius_m * math.cos(math.radians(angleRoh))
-                    y = radius_m * math.sin(math.radians(angleRoh))
-                    z = bpy.data.objects.get(self.object_name).location.z + height_m  # Add the height to the object's current z-coordinate
+        for frameCounter in range(self.render_number):
 
-                    # Set the camera's location
-                    self.camera.location = (x, y, z)
+            # Random camera position
+            height_cm = random.uniform(
+                self.heightVariation["min"],
+                self.heightVariation["max"]
+            )
 
-                    # Make the camera look at the cube
-                    direction = self.object.location - self.camera.location
-                    rot_quat = direction.to_track_quat('-Z', 'Y')
+            radius_cm = random.uniform(
+                self.radiusVariation["min"],
+                self.radiusVariation["max"]
+            )
 
-                    # Convert the quaternion to Euler angles
-                    euler = rot_quat.to_euler()
+            angleRoh = random.uniform(
+                self.angleRohVariation["min"],
+                self.angleRohVariation["max"]
+            )
 
-                    # Add a small random offset to the Euler angles
-                    euler.x += math.radians(random.uniform(self.angleTetaVariation["min"], self.angleTetaVariation["max"]))
-                    euler.y += math.radians(random.uniform(self.angleBetaVariation["min"], self.angleBetaVariation["max"]))
-                    euler.z += math.radians(random.uniform(-5,5 ))
+            radius_m = radius_cm / 100
+            height_m = height_cm / 100
 
-                    # Set the camera's rotation
-                    self.camera.rotation_euler = euler
+            # Camera position
+            x = radius_m * math.cos(math.radians(angleRoh))
+            y = radius_m * math.sin(math.radians(angleRoh))
+            z = self.object.location.z + height_m
 
-                    # Create a dictionary to represent the keyframe
-                    keyframe = {
-                        "frame": frameCounter,
-                        "location": (x, y, z),
-                        "rotation": euler.copy()  # Make sure to copy the Euler object
-                    }
+            self.camera.location = (x, y, z)
 
-                    # Add the keyframe to the list
-                    self.keyframes.append(keyframe)
-                    frameCounter += 1
+            # Camera orientation
+            direction = self.object.location - self.camera.location
+            rot_quat = direction.to_track_quat('-Z', 'Y')
+            euler = rot_quat.to_euler()
 
-                    # Calculate the percentage of completion
-                    percent_complete = frameCounter / self.render_number * 100
-                    # Calculate the elapsed time
-                    elapsed_time = time.time() - start_time
-                    # Estimate the remaining time
-                    time_per_iteration = elapsed_time / frameCounter
-                    remaining_iterations = self.render_number - frameCounter
-                    estimated_remaining_time = time_per_iteration * remaining_iterations
-                    hours, remainder = divmod(estimated_remaining_time, 3600)
-                    minutes, seconds = divmod(remainder, 60)
+            # Random orientation variations
+            euler.x += math.radians(
+                random.uniform(
+                    self.angleTetaVariation["min"],
+                    self.angleTetaVariation["max"]
+                )
+            )
 
-                    # Print the progress information to the terminal
-                    print(f"Progress key frame generation for {self.config_name}:: {percent_complete:.2f}% complete, estimated remaining time: {int(hours)}:{int(minutes)}:{seconds:.2f}", end='\r')
+            euler.y += math.radians(
+                random.uniform(
+                    self.angleBetaVariation["min"],
+                    self.angleBetaVariation["max"]
+                )
+            )
+
+            euler.z += math.radians(random.uniform(-5, 5))
+
+            self.camera.rotation_euler = euler
+
+            keyframe = {
+                "frame": frameCounter,
+                "location": (x, y, z),
+                "rotation": euler.copy()
+            }
+
+            self.keyframes.append(keyframe)
+
+            # Progress
+            percent_complete = (frameCounter + 1) / self.render_number * 100
+
+            elapsed_time = time.time() - start_time
+            time_per_iteration = elapsed_time / (frameCounter + 1)
+            remaining_iterations = self.render_number - (frameCounter + 1)
+            estimated_remaining_time = time_per_iteration * remaining_iterations
+
+            hours, remainder = divmod(estimated_remaining_time, 3600)
+            minutes, seconds = divmod(remainder, 60)
+
+            print(
+                f"Progress key frame generation for {self.config_name}:: "
+                f"{percent_complete:.2f}% complete, "
+                f"estimated remaining time: "
+                f"{int(hours)}:{int(minutes)}:{seconds:.2f}",
+                end='\r'
+            )
+
 
     def set_random_ground(self):
 
